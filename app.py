@@ -1,5 +1,6 @@
 import streamlit as st
 import random
+import pandas as pd
 
 st.set_page_config(page_title="Advanced Number Guessing Game", page_icon="🎯")
 
@@ -28,7 +29,7 @@ else:
 
 
 # ---------------------------
-# Initialize session state
+# Initialize game
 # ---------------------------
 def init_game():
     st.session_state.number = random.randint(1, max_range)
@@ -49,44 +50,60 @@ if "high_score" not in st.session_state:
 
 
 # ---------------------------
-# UI Info
+# Header info
 # ---------------------------
+st.caption(f"🎚️ Difficulty: {difficulty}")
 st.write(f"Guess a number between **1 and {max_range}**")
 
 col1, col2, col3 = st.columns(3)
+
 with col1:
-    st.metric("🎯 Score", st.session_state.score)
+    st.metric("🎯 Score", max(0, st.session_state.score))
+
 with col2:
     st.metric("🔢 Attempts", st.session_state.attempts)
-with col3:
-    remaining = max_attempts - st.session_state.attempts
-    st.metric("⏳ Left", remaining)
 
-st.progress(st.session_state.attempts / max_attempts)
+with col3:
+    # ✅ FIXED LOGIC HERE
+    if st.session_state.game_over:
+        st.metric("🎮 Status", "Game Over")
+    else:
+        remaining = max_attempts - st.session_state.attempts
+        st.metric("⏳ Left", remaining)
+
+# progress bar
+st.progress(min(st.session_state.attempts / max_attempts, 1.0))
 
 
 # ---------------------------
-# Input
+# Input (disabled after game over)
 # ---------------------------
 guess = st.number_input(
     "Enter your guess:",
     min_value=1,
     max_value=max_range,
-    step=1
+    step=1,
+    disabled=st.session_state.game_over
 )
+
+submit = st.button("Submit Guess", disabled=st.session_state.game_over)
 
 
 # ---------------------------
 # Game Logic
 # ---------------------------
-if st.button("Submit Guess") and not st.session_state.game_over:
+if submit:
 
     guess = int(guess)
+
+    # increment AFTER reading remaining
     st.session_state.attempts += 1
     st.session_state.guesses.append(guess)
-    st.session_state.score -= penalty
 
-    # Feedback: Too low / high
+    # Update score safely
+    st.session_state.score = max(0, st.session_state.score - penalty)
+
+    # Too low / high
     if guess < st.session_state.number:
         st.session_state.low = max(st.session_state.low, guess)
         st.warning("📉 Too Low!")
@@ -98,6 +115,7 @@ if st.button("Submit Guess") and not st.session_state.game_over:
             f"🎉 Correct! You guessed it in {st.session_state.attempts} attempts.\n"
             f"Final Score: {st.session_state.score}"
         )
+        st.balloons()
         st.session_state.game_over = True
 
         # Update high score
@@ -114,9 +132,11 @@ if st.button("Submit Guess") and not st.session_state.game_over:
         else:
             st.info("❄️ Getting colder!")
 
-    # Hint range
+    # Hint
     if not st.session_state.game_over:
-        st.info(f"Hint: Number is between {st.session_state.low} and {st.session_state.high}")
+        st.info(
+            f"💡 Try a number between **{st.session_state.low} and {st.session_state.high}**"
+        )
 
     # Game over condition
     if st.session_state.attempts >= max_attempts and not st.session_state.game_over:
@@ -125,10 +145,21 @@ if st.button("Submit Guess") and not st.session_state.game_over:
 
 
 # ---------------------------
-# Previous guesses
+# Last Guess Highlight
 # ---------------------------
 if st.session_state.guesses:
-    st.write("🧾 Previous guesses:", st.session_state.guesses)
+    st.write(f"🎯 Last Guess: **{st.session_state.guesses[-1]}**")
+
+
+# ---------------------------
+# Guess History Table
+# ---------------------------
+if st.session_state.guesses:
+    df = pd.DataFrame({
+        "Attempt": list(range(1, len(st.session_state.guesses) + 1)),
+        "Guess": st.session_state.guesses
+    })
+    st.dataframe(df, use_container_width=True)
 
 
 # ---------------------------
@@ -143,6 +174,7 @@ st.write(f"🏆 High Score: {st.session_state.high_score}")
 def reset_game():
     init_game()
 
+
 if st.session_state.game_over:
     if st.button("▶️ Play Again"):
         reset_game()
@@ -151,3 +183,10 @@ if st.session_state.game_over:
 if st.button("🔄 Restart Game"):
     reset_game()
     st.rerun()
+
+
+# ---------------------------
+# Footer
+# ---------------------------
+st.markdown("---")
+st.caption("Built with ❤️ using Streamlit")
