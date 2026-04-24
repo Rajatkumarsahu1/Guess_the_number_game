@@ -21,7 +21,7 @@ Run locally to experience the game:
 streamlit run app.py
 📦 Installation
 Clone the repository:
-git clone https://github.com/your-username/number-guessing-game.git
+git clone https://github.com/Rajatkumarsahu1/Guess_the_number_game.git
 cd number-guessing-game
 Install dependencies:
 pip install -r requirements.txt
@@ -41,7 +41,8 @@ Try to guess the correct number within limited attempts
 Beat your high score!
 📸 Screenshots
 
-(Add screenshots here if you want — highly recommended for GitHub projects)
+<img width="878" height="671" alt="image" src="https://github.com/user-attachments/assets/4ec6d19f-4f26-483c-8bec-2e6c48b9be41" />
+
 
 📌 Future Improvements
 🔊 Sound effects
